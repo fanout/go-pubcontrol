@@ -12,6 +12,11 @@ import (
     "sync"
     "strings"
     "time"
+    "net/http"
+    "bytes"
+    "io/ioutil"
+    "strconv"
+    "encoding/json"
 
     // TODO: Fix later.
     "github.com/oleiade/lane"
@@ -57,6 +62,25 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
     pcc.lock.Unlock()
 }
 
+func (pcc *PubControlClient) Publish(channel string, item *Item) error {
+    export := item.Export()
+    export["channel"] = channel
+    uri := ""
+    auth := ""    
+    pcc.lock.Lock()
+    uri = pcc.uri
+    auth, err := pcc.generateAuthHeader()
+    pcc.lock.Unlock()
+    if err != nil {
+        return err
+    }
+    err = pcc.pubCall(uri, auth, [](map[string]interface{}){export})
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
 func (pcc *PubControlClient) ensureThread() {
     if !pcc.isWorkerRunning {
         pcc.isWorkerRunning = true
@@ -67,10 +91,6 @@ func (pcc *PubControlClient) ensureThread() {
 }
 
 func (pcc *PubControlClient) pubworker() {
-    for true {
-        fmt.Println("In pubworker")     
-        time.Sleep(time.Second * 1)
-    }
 }
 
 func (pcc *PubControlClient) queueReq(req Request) {
@@ -96,8 +116,6 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
         tokenString, err := token.SignedString(pcc.authJwtKey)
         if err != nil {
             return "", err
-        } else if !token.Valid {
-            return "", &TokenError{err: "token is invalid"}
         }
         return strings.Join([]string{"Bearer ", tokenString}, ""), nil
     } else {
@@ -105,11 +123,51 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     }
 }
 
-type TokenError struct {
+func (pcc *PubControlClient) pubCall(uri, authHeader string,
+        items []map[string]interface{}) error {
+    uri = strings.Join([]string{uri, "/publish/"}, "")
+    content := make(map[string]interface{})
+    content["items"] = items
+    client := &http.Client{}
+    resp, err := client.Get(uri)
+	if err != nil {
+		return err
+	}
+    var jsonContent []byte
+    jsonContent, err = json.Marshal(content)
+	if err != nil {
+		return err
+	}
+    // TODO: Remove later.
+    fmt.Println("JSON Content: ", string(jsonContent))    
+    var req *http.Request
+    req, err = http.NewRequest("POST", uri, bytes.NewReader(jsonContent))
+	if err != nil {
+		return err
+	}
+    req.Header.Add("Content-Type", "application/json")
+    req.Header.Add("Authorization", authHeader)
+    resp, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+    defer resp.Body.Close()
+    var body []byte
+    body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        return &PublishError{err: strings.Join([]string{"Failure status code: ",
+                strconv.Itoa(resp.StatusCode), " with message: ", string(body)}, "")}
+    }
+    return nil
+}
+
+type PublishError struct {
 	err string
 }
 
-func (e TokenError) Error() string {
+func (e PublishError) Error() string {
 	return e.err
 }
-

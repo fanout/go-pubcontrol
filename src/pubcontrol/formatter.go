@@ -9,5 +9,5 @@ package pubcontrol
 
 type Formatter interface {
     Name() string
-    Export() string
+    Export() map[string]interface{}
 }
