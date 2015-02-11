@@ -11,6 +11,6 @@ type Request struct {
     Type string
     Uri string
     Auth string
-    Export string
-    Callback string
+    Export map[string]interface{}
+    Callback func(result bool, err error)
 }
