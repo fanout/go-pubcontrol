@@ -40,7 +40,7 @@ type HttpResponseFormat struct {
 func (format HttpResponseFormat) Name() string {
     return "http-response"
 }
-func (format HttpResponseFormat) Export() map[string]interface{} {
+func (format HttpResponseFormat) Export() interface{} {
     export := make(map[string]interface{})
     export["body"] = format.Body
     return export
