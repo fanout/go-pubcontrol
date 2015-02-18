@@ -1,6 +1,7 @@
 //    pcccbhandler.go
 //    ~~~~~~~~~
-//    This module implements the PubControlClientCallbackHandler struct.
+//    This module implements the PubControlClientCallbackHandler struct
+//    and features.
 //    :authors: Konstantin Bokarius.
 //    :copyright: (c) 2015 by Fanout, Inc.
 //    :license: MIT, see LICENSE for more details.

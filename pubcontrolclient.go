@@ -94,7 +94,7 @@ func (pcc *PubControlClient) PublishAsync(channel string, item *Item,
     if err != nil {
         return err
     }
-    pcc.queueReq(Request{Type: "pub", Uri: uri, Auth: auth, Export: export,
+    pcc.queueReq(&request{Type: "pub", Uri: uri, Auth: auth, Export: export,
             Callback: callback})
     return nil
 }
@@ -102,7 +102,7 @@ func (pcc *PubControlClient) PublishAsync(channel string, item *Item,
 func (pcc *PubControlClient) Finish() {
     pcc.lock.Lock()
     if pcc.isWorkerRunning {
-        pcc.queueReq(Request{Type: "stop"}) 
+        pcc.queueReq(&request{Type: "stop"}) 
         pcc.waitGroup.Wait()
         pcc.isWorkerRunning = false
     }
@@ -119,7 +119,7 @@ func (pcc *PubControlClient) ensureThread() {
     }
 }
 
-func (pcc *PubControlClient) pubBatch(reqs []Request) {
+func (pcc *PubControlClient) pubBatch(reqs []*request) {
     uri := reqs[0].Uri
     auth := reqs[0].Auth
     items := make([]map[string]interface{}, 0)
@@ -150,14 +150,14 @@ func (pcc *PubControlClient) pubWorker() {
                 continue
             }
         }
-        reqs := []Request{}
+        reqs := []*request{}
         for (pcc.ReqQueue.Size() > 0 && len(reqs) < 10) {
-            m := pcc.ReqQueue.Shift().(Request)
+            m := pcc.ReqQueue.Shift().(request)
             if m.Type == "stop" {
                 quit = true
                 break
             }
-            reqs = append(reqs, m)
+            reqs = append(reqs, &m)
         }
         pcc.condLock.Unlock()
         if len(reqs) > 0 {
@@ -166,9 +166,9 @@ func (pcc *PubControlClient) pubWorker() {
     }
 }
 
-func (pcc *PubControlClient) queueReq(req Request) {
+func (pcc *PubControlClient) queueReq(req *request) {
     pcc.condLock.Lock()
-    pcc.ReqQueue.Append(req)
+    pcc.ReqQueue.Append(*req)
     pcc.cond.Signal()
     pcc.condLock.Unlock()
 }
@@ -203,31 +203,31 @@ func (pcc *PubControlClient) pubCall(uri, authHeader string,
     content["items"] = items
     client := &http.Client{}
     resp, err := client.Get(uri)
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
     var jsonContent []byte
     jsonContent, err = json.Marshal(content)
-	if err != nil {
-		return err
-	}   
+    if err != nil {
+        return err
+    }   
     var req *http.Request
     req, err = http.NewRequest("POST", uri, bytes.NewReader(jsonContent))
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
     req.Header.Add("Content-Type", "application/json")
     req.Header.Add("Authorization", authHeader)
     resp, err = client.Do(req)
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
     defer resp.Body.Close()
     var body []byte
     body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
     if resp.StatusCode < 200 || resp.StatusCode >= 300 {
         return &PublishError{err: strings.Join([]string{"Failure status code: ",
                 strconv.Itoa(resp.StatusCode), " with message: ", string(body)}, "")}
@@ -236,9 +236,9 @@ func (pcc *PubControlClient) pubCall(uri, authHeader string,
 }
 
 type PublishError struct {
-	err string
+    err string
 }
 
 func (e PublishError) Error() string {
-	return e.err
+    return e.err
 }

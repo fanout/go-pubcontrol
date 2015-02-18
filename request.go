@@ -1,13 +1,13 @@
 //    request.go
 //    ~~~~~~~~~
-//    This module implements the Request struct.
+//    This module implements the request struct.
 //    :authors: Konstantin Bokarius.
 //    :copyright: (c) 2015 by Fanout, Inc.
 //    :license: MIT, see LICENSE for more details.
 
 package pubcontrol
 
-type Request struct {
+type request struct {
     Type string
     Uri string
     Auth string
