@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/fanout/go-pubcontrol",
+	"GoVersion": "go1.4",
+	"Deps": [
+		{
+			"ImportPath": "github.com/dgrijalva/jwt-go",
+			"Comment": "v2.2.0-15-g61124b6",
+			"Rev": "61124b62ad244d655f87d944aefaa2ae5a0d2f16"
+		},
+		{
+			"ImportPath": "github.com/oleiade/lane",
+			"Comment": "0.1.0-21-ge2df44d",
+			"Rev": "e2df44de3dbdd0074d315d1fa74f15a090802b45"
+		}
+	]
+}
