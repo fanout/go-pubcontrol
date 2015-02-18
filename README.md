@@ -65,41 +65,41 @@ func main() {
     if err != nil {
         panic("Failed to base64 decode the key")
     }
-    pc := pubcontrol.NewPubControl([]map[string]interface{} {
+    pub := pubcontrol.NewPubControl([]map[string]interface{} {
             map[string]interface{} {
             "uri": "https://api.fanout.io/realm/<myrealm>",
             "iss": "<myrealm>", 
             "key": decodedKey}})
 
     // Add new endpoints by applying an endpoint configuration:
-    pc.ApplyConfig([]map[string]interface{} {
+    pub.ApplyConfig([]map[string]interface{} {
             map[string]interface{} { "uri": "<myendpoint_uri_1>" },
             map[string]interface{} { "uri": "<myendpoint_uri_2>" }})
 
     // Remove all configured endpoints:
-    pc.RemoveAllClients()
+    pub.RemoveAllClients()
 
     // Explicitly add an endpoint as a PubControlClient instance:
     client := pubcontrol.NewPubControlClient("<myendpoint_uri>")
     // Optionally set JWT auth: client.SetAuthJwt(<claim>, "<key>")
     // Optionally set basic auth: client.SetAuthBasic("<user>", "<password>")
-    pc.AddClient(client)
+    pub.AddClient(client)
 
     // Create an item to publish:
     format := &HttpResponseFormat{Body: "Test Go Publish!!"} 
     item := pubcontrol.NewItem([]pubcontrol.Formatter{format}, "", "")
 
     // Publish across all configured endpoints:
-    err = pc.Publish("<channel>", item)
+    err = pub.Publish("<channel>", item)
     if err != nil {
         panic("Sync publish failed with: " + err.Error())
     }
-    err = pc.PublishAsync("<channel>", item, callback)
+    err = pub.PublishAsync("<channel>", item, callback)
     if err != nil {
         panic("Async publish failed with: " + err.Error())
     }
 
     // Wait for all async publish calls to complete:
-    pc.Finish()
+    pub.Finish()
 }
 ```
