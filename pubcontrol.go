@@ -43,32 +43,9 @@ func (pc *PubControl) ApplyConfig(config []map[string]interface{}) {
     }
 }
 
-func (pc *PubControl) Finish() {
-    for _, pcc := range pc.clients {
-        pcc.Finish()
-    }
-}
-
 func (pc *PubControl) Publish(channel string, item *Item) error {
     for _, pcc := range pc.clients {
         err := pcc.Publish(channel, item)
-        if err != nil {
-            return err
-        }
-    }
-    return nil
-}
-
-func (pc *PubControl) PublishAsync(channel string, item *Item,
-        callback func(result bool, err error)) error {
-    var cb func(result bool, err error) = nil
-    if callback != nil {
-        pcccbhandler := NewPubControlClientCallbackHandler(len(pc.clients),
-                callback)
-        cb = pcccbhandler.Handler
-    }
-    for _, pcc := range pc.clients {       
-        err := pcc.PublishAsync(channel, item, cb)
         if err != nil {
             return err
         }

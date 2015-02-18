@@ -17,7 +17,6 @@ import (
     "io/ioutil"
     "strconv"
     "encoding/json"
-    "github.com/oleiade/lane"
     "github.com/dgrijalva/jwt-go"
 )
 
@@ -25,10 +24,6 @@ type PubControlClient struct {
     uri string
     isWorkerRunning bool
     lock *sync.Mutex
-    cond *sync.Cond
-    condLock *sync.Mutex
-    waitGroup *sync.WaitGroup
-    ReqQueue *lane.Deque
     authBasicUser string
     authBasicPass string
     authJwtClaim map[string]interface{}
@@ -39,8 +34,6 @@ func NewPubControlClient(uri string) *PubControlClient {
     newPcc := new(PubControlClient)
     newPcc.uri = uri
     newPcc.lock = &sync.Mutex{}
-    newPcc.waitGroup = &sync.WaitGroup{}
-    newPcc.ReqQueue = lane.NewDeque()
     return newPcc
 }
 
@@ -78,98 +71,6 @@ func (pcc *PubControlClient) Publish(channel string, item *Item) error {
     return nil
 }
 
-func (pcc *PubControlClient) PublishAsync(channel string, item *Item,
-        callback func(result bool, err error)) error {
-    export := item.Export()
-    export["channel"] = channel
-    uri := ""
-    auth := ""    
-    pcc.lock.Lock()
-    uri = pcc.uri
-    auth, err := pcc.generateAuthHeader()
-    pcc.ensureThread()
-    pcc.lock.Unlock()
-    if err != nil {
-        return err
-    }
-    pcc.queueReq(&request{Type: "pub", Uri: uri, Auth: auth, Export: export,
-            Callback: callback})
-    return nil
-}
-
-func (pcc *PubControlClient) Finish() {
-    pcc.lock.Lock()
-    if pcc.isWorkerRunning {
-        pcc.queueReq(&request{Type: "stop"}) 
-        pcc.waitGroup.Wait()
-        pcc.isWorkerRunning = false
-    }
-    pcc.lock.Unlock()
-}
-
-func (pcc *PubControlClient) ensureThread() {
-    if !pcc.isWorkerRunning {
-        pcc.isWorkerRunning = true
-        pcc.condLock = &sync.Mutex{}
-        pcc.cond = sync.NewCond(pcc.condLock)
-        pcc.waitGroup.Add(1)
-        go pcc.pubWorker()
-    }
-}
-
-func (pcc *PubControlClient) pubBatch(reqs []*request) {
-    uri := reqs[0].Uri
-    auth := reqs[0].Auth
-    items := make([]map[string]interface{}, 0)
-    callbacks := make([]func(result bool, err error), 0)
-    for _, req := range reqs {
-        items = append(items, req.Export)
-        callbacks = append(callbacks, req.Callback)
-    }
-    err := pcc.pubCall(uri, auth, items)
-    for _, callback := range callbacks {
-        if err == nil {
-            callback(true, nil)
-        } else {
-            callback(false, err)
-        }
-    }
-}
-
-func (pcc *PubControlClient) pubWorker() {
-    defer pcc.waitGroup.Done()
-    quit := false
-    for !quit {
-        pcc.condLock.Lock()   
-        if pcc.ReqQueue.Size() == 0 {
-            pcc.cond.Wait()
-            if pcc.ReqQueue.Size() == 0 {
-                pcc.condLock.Unlock()
-                continue
-            }
-        }
-        reqs := []*request{}
-        for (pcc.ReqQueue.Size() > 0 && len(reqs) < 10) {
-            m := pcc.ReqQueue.Shift().(request)
-            if m.Type == "stop" {
-                quit = true
-                break
-            }
-            reqs = append(reqs, &m)
-        }
-        pcc.condLock.Unlock()
-        if len(reqs) > 0 {
-            pcc.pubBatch(reqs)
-        }
-    }
-}
-
-func (pcc *PubControlClient) queueReq(req *request) {
-    pcc.condLock.Lock()
-    pcc.ReqQueue.Append(*req)
-    pcc.cond.Signal()
-    pcc.condLock.Unlock()
-}
 
 func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     if pcc.authBasicUser != "" {

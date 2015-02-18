@@ -17,7 +17,7 @@ Installation
 go get github.com/fanout/go-pubcontrol
 ```
 
-go-pubcontrol requires jwt-go 2.2.0 and lane 0.1.0. To ensure that the correct versions of both dependencies are installed use godeps:
+go-pubcontrol requires jwt-go 2.2.0. To ensure that the correct version of this dependency is installed use godeps:
 
 ```sh
 go get github.com/tools/godep
@@ -32,7 +32,6 @@ Usage
 package main
 
 import "github.com/fanout/go-pubcontrol"
-import "fmt"
 import "encoding/base64"
 
 type HttpResponseFormat struct {
@@ -45,14 +44,6 @@ func (format HttpResponseFormat) Export() map[string]interface{} {
     export := make(map[string]interface{})
     export["body"] = format.Body
     return export
-}
-
-func callback(result bool, err error) {
-    if result {
-        fmt.Println("Async publish successful")
-    } else {
-        fmt.Println("Async publish failed: " + err.Error())
-    }
 }
 
 func main() {
@@ -92,14 +83,7 @@ func main() {
     // Publish across all configured endpoints:
     err = pub.Publish("<channel>", item)
     if err != nil {
-        panic("Sync publish failed with: " + err.Error())
+        panic("Publish failed with: " + err.Error())
     }
-    err = pub.PublishAsync("<channel>", item, callback)
-    if err != nil {
-        panic("Async publish failed with: " + err.Error())
-    }
-
-    // Wait for all async publish calls to complete:
-    pub.Finish()
 }
 ```
