@@ -17,8 +17,6 @@ import (
     "io/ioutil"
     "strconv"
     "encoding/json"
-
-    // TODO: Fix later.
     "github.com/oleiade/lane"
     "github.com/dgrijalva/jwt-go"
 )
