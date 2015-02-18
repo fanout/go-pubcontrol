@@ -17,7 +17,7 @@ Installation
 go get github.com/fanout/go-pubcontrol
 ```
 
-go-pubcontrol requires jwt-go 2.2.0 and lane 0.1.0. To ensure that the correct versions of both dependencies are installed follow these steps:
+go-pubcontrol requires jwt-go 2.2.0 and lane 0.1.0. To ensure that the correct versions of both dependencies are installed use godeps:
 
 ```sh
 go get github.com/tools/godep
