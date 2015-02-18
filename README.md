@@ -31,7 +31,7 @@ Usage
 ```go
 package main
 
-import "github.com/fanout/pubcontrol"
+import "github.com/fanout/go-pubcontrol"
 import "fmt"
 import "encoding/base64"
 
