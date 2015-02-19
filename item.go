@@ -21,7 +21,7 @@ func NewItem(formats []Formatter, id, prevId string) *Item {
     return newItem
 }
 
-func (item Item) Export() map[string]interface{} {
+func (item *Item) Export() map[string]interface{} {
     out := make(map[string]interface{})
     if item.id != "" {
         out["id"] = item.id
