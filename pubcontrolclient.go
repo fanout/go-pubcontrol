@@ -7,7 +7,6 @@
 
 package pubcontrol
 
-// TODO: Figure out how to properly import lane and other packages.
 import (
     "sync"
     "strings"
