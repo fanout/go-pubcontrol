@@ -19,6 +19,11 @@ import (
     "github.com/dgrijalva/jwt-go"
 )
 
+// The PubControlClient struct allows consumers to publish to an endpoint of
+// their choice. The consumer wraps a Format struct instance in an Item struct
+// instance and passes that to the publish method. The publish method has
+// an optional callback parameter that is called after the publishing is 
+// complete to notify the consumer of the result.
 type PubControlClient struct {
     uri string
     isWorkerRunning bool
@@ -29,6 +34,7 @@ type PubControlClient struct {
     authJwtKey []byte
 }
 
+// Initialize this struct with a URL representing the publishing endpoint.
 func NewPubControlClient(uri string) *PubControlClient {
     newPcc := new(PubControlClient)
     newPcc.uri = uri
@@ -36,6 +42,8 @@ func NewPubControlClient(uri string) *PubControlClient {
     return newPcc
 }
 
+// Call this method and pass a username and password to use basic
+// authentication with the configured endpoint.
 func (pcc *PubControlClient) SetAuthBasic(username, password string) {
     pcc.lock.Lock()
     pcc.authBasicUser = username
@@ -43,6 +51,8 @@ func (pcc *PubControlClient) SetAuthBasic(username, password string) {
     pcc.lock.Unlock()
 }
 
+// Call this method and pass a claim and key to use JWT authentication
+// with the configured endpoint.
 func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{}, 
         key []byte) {
     pcc.lock.Lock()
@@ -51,6 +61,8 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
     pcc.lock.Unlock()
 }
 
+// The publish method for publishing the specified item to the specified
+// channel on the configured endpoint.
 func (pcc *PubControlClient) Publish(channel string, item *Item) error {
     export := item.Export()
     export["channel"] = channel
@@ -70,7 +82,10 @@ func (pcc *PubControlClient) Publish(channel string, item *Item) error {
     return nil
 }
 
-
+// An internal method used to generate an authorization header. The
+// authorization header is generated based on whether basic or JWT
+// authorization information was provided via the publicly accessible
+// 'set_*_auth' methods defined above.
 func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     if pcc.authBasicUser != "" {
         return strings.Join([]string{"Basic #", pcc.authBasicUser, ":#",
@@ -94,6 +109,9 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     }
 }
 
+// An internal method for preparing the HTTP POST request for publishing
+// data to the endpoint. This method accepts the URI endpoint, authorization
+// header, and a list of items to publish.
 func (pcc *PubControlClient) pubCall(uri, authHeader string,
         items []map[string]interface{}) error {
     uri = strings.Join([]string{uri, "/publish/"}, "")
@@ -133,10 +151,12 @@ func (pcc *PubControlClient) pubCall(uri, authHeader string,
     return nil
 }
 
+// An error struct used to represent an error encountered during publishing.
 type PublishError struct {
     err string
 }
 
+// This function returns the message associated with the Publish error struct.
 func (e PublishError) Error() string {
     return e.err
 }

@@ -7,6 +7,9 @@
 
 package pubcontrol
 
+// The Request struct represents the parameters required for publishing a
+// message. This includes the request type, URI, authorization header,
+// exported message data, and callback function.
 type request struct {
     Type string
     Uri string
