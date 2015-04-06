@@ -34,7 +34,17 @@ func NewItem(formats []Formatter, id, prevId string) *Item {
 // into a hash that is used for publishing to clients. If more than one
 // instance of the same type of Format implementation was specified then
 // an error will be raised.
-func (item *Item) Export() map[string]interface{} {
+func (item *Item) Export() (map[string]interface{}, error) {
+    formatNames := make([]string, 0)
+    for _, format := range item.formats {
+        for _, formatName := range formatNames {
+            if formatName == format.Name() {
+                return nil, &ItemFormatError{err: "Only one instance of a " +
+                        "specific Formatter implementation can be specified."}
+            }
+        }
+        formatNames = append(formatNames, format.Name());
+    }
     out := make(map[string]interface{})
     if item.id != "" {
         out["id"] = item.id
@@ -42,8 +52,19 @@ func (item *Item) Export() map[string]interface{} {
     if item.prevId != "" {
         out["prev-id"] = item.prevId
     }
-    for _,format := range item.formats {
+    for _, format := range item.formats {
         out[format.Name()] = format.Export()
     }
-    return out
+    return out, nil
+}
+
+// An error struct used to represent an error related to item formats.
+type ItemFormatError struct {
+    err string
+}
+
+// This function returns the message associated with the ItemFormatError
+// error struct.
+func (e ItemFormatError) Error() string {
+    return e.err
 }

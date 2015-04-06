@@ -64,13 +64,16 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
 // The publish method for publishing the specified item to the specified
 // channel on the configured endpoint.
 func (pcc *PubControlClient) Publish(channel string, item *Item) error {
-    export := item.Export()
+    export, err := item.Export()
+    if err != nil {
+        return err
+    }
     export["channel"] = channel
     uri := ""
     auth := ""    
     pcc.lock.Lock()
     uri = pcc.uri
-    auth, err := pcc.generateAuthHeader()
+    auth, err = pcc.generateAuthHeader()
     pcc.lock.Unlock()
     if err != nil {
         return err
