@@ -17,7 +17,16 @@ import (
     "strconv"
     "encoding/json"
     "github.com/dgrijalva/jwt-go"
+    "encoding/base64"
 )
+
+// An internal type used to define the pubCall method.
+type pubCaller func(pcc *PubControlClient, uri, authHeader string,
+        items []map[string]interface{}) error
+
+// An internal type used to define the makeHttpRequest method.
+type makeHttpRequester func(pcc *PubControlClient, uri, authHeader string,
+        jsonContent []byte) (int, []byte, error)
 
 // The PubControlClient struct allows consumers to publish to an endpoint of
 // their choice. The consumer wraps a Format struct instance in an Item struct
@@ -32,6 +41,9 @@ type PubControlClient struct {
     authBasicPass string
     authJwtClaim map[string]interface{}
     authJwtKey []byte
+    pubCall pubCaller
+    makeHttpRequest makeHttpRequester
+    httpClient *http.Client
 }
 
 // Initialize this struct with a URL representing the publishing endpoint.
@@ -39,6 +51,9 @@ func NewPubControlClient(uri string) *PubControlClient {
     newPcc := new(PubControlClient)
     newPcc.uri = uri
     newPcc.lock = &sync.Mutex{}
+    newPcc.pubCall = pubCall
+    newPcc.makeHttpRequest = makeHttpRequest
+    newPcc.httpClient = &http.Client{}
     return newPcc
 }
 
@@ -78,7 +93,7 @@ func (pcc *PubControlClient) Publish(channel string, item *Item) error {
     if err != nil {
         return err
     }
-    err = pcc.pubCall(uri, auth, [](map[string]interface{}){export})
+    err = pcc.pubCall(pcc, uri, auth, [](map[string]interface{}){export})
     if err != nil {
         return err
     }
@@ -91,8 +106,10 @@ func (pcc *PubControlClient) Publish(channel string, item *Item) error {
 // 'set_*_auth' methods defined above.
 func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     if pcc.authBasicUser != "" {
-        return strings.Join([]string{"Basic #", pcc.authBasicUser, ":#",
-                pcc.authBasicPass}, ""), nil
+        encodedCredentials := base64.StdEncoding.EncodeToString([]byte(
+                strings.Join([]string{pcc.authBasicUser, ":",
+                pcc.authBasicPass}, "")))
+        return strings.Join([]string{"Basic ", encodedCredentials}, ""), nil
     } else if pcc.authJwtClaim != nil {
         token := jwt.New(jwt.SigningMethodHS256)
         token.Valid = true
@@ -115,43 +132,52 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
 // An internal method for preparing the HTTP POST request for publishing
 // data to the endpoint. This method accepts the URI endpoint, authorization
 // header, and a list of items to publish.
-func (pcc *PubControlClient) pubCall(uri, authHeader string,
+func pubCall(pcc *PubControlClient, uri, authHeader string,
         items []map[string]interface{}) error {
     uri = strings.Join([]string{uri, "/publish/"}, "")
     content := make(map[string]interface{})
     content["items"] = items
-    client := &http.Client{}
-    resp, err := client.Get(uri)
+    var jsonContent []byte
+    jsonContent, err := json.Marshal(content)
     if err != nil {
         return err
     }
-    var jsonContent []byte
-    jsonContent, err = json.Marshal(content)
+    statusCode, body, err := pcc.makeHttpRequest(pcc, uri, authHeader,
+            jsonContent)
     if err != nil {
         return err
-    }   
+    }
+    if statusCode < 200 || statusCode >= 300 {
+        return &PublishError{err: strings.Join([]string{"Failure status code: ",
+                strconv.Itoa(statusCode), " with message: ",
+                string(body)}, "")}
+    }
+    return nil
+}
+
+// An internal method used to make the HTTP request for publishing based
+// on the specified URI, auth header, and JSON content. An HTTP status
+// code, response body, and an error will be returned.
+func makeHttpRequest(pcc *PubControlClient, uri, authHeader string,
+        jsonContent []byte) (int, []byte, error) {
     var req *http.Request
-    req, err = http.NewRequest("POST", uri, bytes.NewReader(jsonContent))
+    req, err := http.NewRequest("POST", uri, bytes.NewReader(jsonContent))
     if err != nil {
-        return err
+        return 0, nil, err
     }
     req.Header.Add("Content-Type", "application/json")
     req.Header.Add("Authorization", authHeader)
-    resp, err = client.Do(req)
+    resp, err := pcc.httpClient.Do(req)
     if err != nil {
-        return err
+        return 0, nil, err
     }
     defer resp.Body.Close()
     var body []byte
     body, err = ioutil.ReadAll(resp.Body)
     if err != nil {
-        return err
+        return 0, nil, err
     }
-    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-        return &PublishError{err: strings.Join([]string{"Failure status code: ",
-                strconv.Itoa(resp.StatusCode), " with message: ", string(body)}, "")}
-    }
-    return nil
+    return resp.StatusCode, body, nil
 }
 
 // An error struct used to represent an error encountered during publishing.

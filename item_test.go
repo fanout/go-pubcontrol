@@ -37,7 +37,10 @@ var fmt2 Formatter = &FormatTestStruct2{value:"value2"}
 func TestItemInitialize(t *testing.T) {
     formats := make([]Formatter, 0);
     formats = append(formats, fmt1a);
-    NewItem(formats, "id", "prev-id");
+    item := NewItem(formats, "id", "prev-id");
+    assert.Equal(t, item.id, "id");
+    assert.Equal(t, item.prevId, "prev-id");
+    assert.Equal(t, item.formats[0], fmt1a);
 }
 
 func TestItemExport(t *testing.T) {
