@@ -20,6 +20,9 @@ import (
     "encoding/base64"
 )
 
+// An internal type used to define the Publish method.
+type publisher func(pcc *PubControlClient, channel string, item *Item) error
+
 // An internal type used to define the pubCall method.
 type pubCaller func(pcc *PubControlClient, uri, authHeader string,
         items []map[string]interface{}) error
@@ -41,6 +44,7 @@ type PubControlClient struct {
     authBasicPass string
     authJwtClaim map[string]interface{}
     authJwtKey []byte
+    publish publisher
     pubCall pubCaller
     makeHttpRequest makeHttpRequester
     httpClient *http.Client
@@ -52,6 +56,7 @@ func NewPubControlClient(uri string) *PubControlClient {
     newPcc.uri = uri
     newPcc.lock = &sync.Mutex{}
     newPcc.pubCall = pubCall
+    newPcc.publish = publish
     newPcc.makeHttpRequest = makeHttpRequest
     newPcc.httpClient = &http.Client{}
     return newPcc
@@ -74,30 +79,6 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
     pcc.authJwtClaim = claim
     pcc.authJwtKey = key
     pcc.lock.Unlock()
-}
-
-// The publish method for publishing the specified item to the specified
-// channel on the configured endpoint.
-func (pcc *PubControlClient) Publish(channel string, item *Item) error {
-    export, err := item.Export()
-    if err != nil {
-        return err
-    }
-    export["channel"] = channel
-    uri := ""
-    auth := ""    
-    pcc.lock.Lock()
-    uri = pcc.uri
-    auth, err = pcc.generateAuthHeader()
-    pcc.lock.Unlock()
-    if err != nil {
-        return err
-    }
-    err = pcc.pubCall(pcc, uri, auth, [](map[string]interface{}){export})
-    if err != nil {
-        return err
-    }
-    return nil
 }
 
 // An internal method used to generate an authorization header. The
@@ -127,6 +108,35 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
     } else {
         return "", nil
     }
+}
+
+// The publish method for publishing the specified item to the specified
+// channel on the configured endpoint.
+func (pcc *PubControlClient) Publish(channel string, item *Item) error {
+    return pcc.publish(pcc, channel, item)
+}
+
+// An internal publish method to facilitate testing.
+func publish(pcc *PubControlClient, channel string, item *Item) error {
+    export, err := item.Export()
+    if err != nil {
+        return err
+    }
+    export["channel"] = channel
+    uri := ""
+    auth := ""
+    pcc.lock.Lock()
+    uri = pcc.uri
+    auth, err = pcc.generateAuthHeader()
+    pcc.lock.Unlock()
+    if err != nil {
+        return err
+    }
+    err = pcc.pubCall(pcc, uri, auth, [](map[string]interface{}){export})
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
 // An internal method for preparing the HTTP POST request for publishing

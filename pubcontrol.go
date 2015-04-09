@@ -51,7 +51,12 @@ func (pc *PubControl) ApplyConfig(config []map[string]interface{}) {
         if _, ok := entry["iss"]; ok {
             claim := make(map[string]interface{})
             claim["iss"] = entry["iss"]
-            pcc.SetAuthJwt(claim, entry["key"].([]byte))
+            switch entry["key"].(type) {
+                case string:
+                    pcc.SetAuthJwt(claim, []byte(entry["key"].(string)))
+                case []byte:
+                    pcc.SetAuthJwt(claim, entry["key"].([]byte))
+            }
         }
         pc.clients = append(pc.clients, pcc)
     }
