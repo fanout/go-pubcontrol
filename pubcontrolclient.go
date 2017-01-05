@@ -18,6 +18,7 @@ import (
     "encoding/json"
     "github.com/dgrijalva/jwt-go"
     "encoding/base64"
+    "net"
 )
 
 // An internal type used to define the Publish method.
@@ -52,13 +53,29 @@ type PubControlClient struct {
 
 // Initialize this struct with a URL representing the publishing endpoint.
 func NewPubControlClient(uri string) *PubControlClient {
+
+    // This is basically the same as the default in Go 1.6, but with these changes:
+    // Timeout: 30s -> 10s
+    // TLSHandshakeTimeout: 10s -> 7s
+    // MaxIdleConnsPerHost: 2 -> 100
+    transport := &http.Transport{
+        Proxy: http.ProxyFromEnvironment,
+        Dial: (&net.Dialer{
+            Timeout:   10 * time.Second,
+            KeepAlive: 30 * time.Second,
+        }).Dial,
+        TLSHandshakeTimeout:   7 * time.Second,
+        ExpectContinueTimeout: 1 * time.Second,
+        MaxIdleConnsPerHost: 100,
+    }
+
     newPcc := new(PubControlClient)
     newPcc.uri = uri
     newPcc.lock = &sync.Mutex{}
     newPcc.pubCall = pubCall
     newPcc.publish = publish
     newPcc.makeHttpRequest = makeHttpRequest
-    newPcc.httpClient = &http.Client{}
+    newPcc.httpClient = &http.Client{Transport: transport, Timeout: 15 * time.Second}
     return newPcc
 }
 
