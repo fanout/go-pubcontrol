@@ -1,0 +1,26 @@
+machine:
+  environment:
+    GODIST: "go1.6.3.linux-amd64.tar.gz"
+    IMPORT_PATH: "github.com/launchdarkly/event-recorder"
+  post:
+    - mkdir -p download
+    - test -e download/$GODIST || curl -o download/$GODIST https://storage.googleapis.com/golang/$GODIST
+    - sudo rm -rf /usr/local/go
+    - sudo tar -C /usr/local -xzf download/$GODIST
+
+dependencies:
+  pre:
+    - rm -rf ~/.go_workspace/src/github.com/launchdarkly/go-pubcontrol
+    - mkdir -p ~/.go_workspace/src/github.com/launchdarkly/
+    - ln -s ~/event-recorder ~/.go_workspace/src/github.com/launchdarkly/go-pubcontrol
+    - go get gopkg.in/tools/godep.v75 # lock down our version of godep
+    - ln -sf ~/.go_workspace/bin/godep.v75 ~/.go_workspace/bin/godep
+    - go get github.com/GoASTScanner/gas # get the Go AST scanner
+  override:
+    - go version
+    - godep version
+
+test:
+  override:
+    - gas -skip=**Godeps/** -exclude=G101,G104 -out=$CIRCLE_ARTIFACTS/gas-results.txt ./...
+    - godep go test ./... -v
