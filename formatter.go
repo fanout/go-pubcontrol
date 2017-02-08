@@ -12,11 +12,11 @@ package pubcontrol
 // include JsonObjectFormat and HttpStreamFormat.
 type Formatter interface {
 
-    // The name of the format which should return a string. Examples
-    // include 'json-object' and 'http-response'
-    Name() string
+	// The name of the format which should return a string. Examples
+	// include 'json-object' and 'http-response'
+	Name() string
 
-    // The export method which should return a format-specific hash
-    // containing the required format-specific data.
-    Export() interface{}
+	// The export method which should return a format-specific hash
+	// containing the required format-specific data.
+	Export() interface{}
 }

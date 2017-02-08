@@ -11,9 +11,9 @@ package pubcontrol
 // message. This includes the request type, URI, authorization header,
 // exported message data, and callback function.
 type request struct {
-    Type string
-    Uri string
-    Auth string
-    Export map[string]interface{}
-    Callback func(result bool, err error)
+	Type     string
+	Uri      string
+	Auth     string
+	Export   map[string]interface{}
+	Callback func(result bool, err error)
 }

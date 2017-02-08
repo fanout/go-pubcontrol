@@ -7,21 +7,24 @@
 
 package pubcontrol
 
-import ("testing"
-        "github.com/stretchr/testify/assert")
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 type FormatTestStruct struct {
-    value string
+	value string
 }
+
 func (format *FormatTestStruct) Name() string {
-    return "test-format"
+	return "test-format"
 }
 func (format *FormatTestStruct) Export() interface{} {
-    return format.value
+	return format.value
 }
 
 func TestFormatter(t *testing.T) {
-    fmt := &FormatTestStruct{value:"value"}
-    assert.Equal(t, fmt.Name(), "test-format")
-    assert.Equal(t, fmt.Export(), "value")
+	fmt := &FormatTestStruct{value: "value"}
+	assert.Equal(t, fmt.Name(), "test-format")
+	assert.Equal(t, fmt.Export(), "value")
 }
