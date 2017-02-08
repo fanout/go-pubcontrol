@@ -8,6 +8,7 @@
 package pubcontrol
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -92,7 +93,42 @@ func TestPcPublish(t *testing.T) {
 	pcc = NewPubControlClient("uri")
 	pcc.publish = publish2
 	pc.AddClient(pcc)
-	pc.Publish("chan", item)
+	err := pc.Publish("chan", item)
+	assert.NoError(t, err)
+	assert.Equal(t, publishResults1[0], "chan")
+	assert.Equal(t, publishResults1[1], item)
+	assert.Equal(t, publishResults2[0], "chan")
+	assert.Equal(t, publishResults2[1], item)
+}
+
+func publishError(pcc *PubControlClient, channel string, item *Item) error {
+	return errors.New("Intentional error for tests")
+}
+
+func TestPcPublishPartialError(t *testing.T) {
+	publishResults1 = nil
+	publishResults2 = nil
+	formats := make([]Formatter, 0)
+	formats = append(formats, fmt1a)
+	item := NewItem(formats, "id", "prev-id")
+	pc := NewPubControl(nil)
+
+	pcc := NewPubControlClient("uri")
+	pcc.publish = publish1
+	pc.AddClient(pcc)
+
+	pcc = NewPubControlClient("uri")
+	pcc.publish = publish2
+	pc.AddClient(pcc)
+
+	pcc = NewPubControlClient("error")
+	pcc.publish = publishError
+	pc.AddClient(pcc)
+
+	err := pc.Publish("chan", item)
+	assert.Error(t, err)
+	assert.Equal(t, "1/3 client(s) failed to publish to channel: chan Errors: [Intentional error for tests]", err.Error())
+
 	assert.Equal(t, publishResults1[0], "chan")
 	assert.Equal(t, publishResults1[1], item)
 	assert.Equal(t, publishResults2[0], "chan")
