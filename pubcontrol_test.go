@@ -117,12 +117,12 @@ func TestPcPublishPartialError(t *testing.T) {
 	pcc.publish = publish1
 	pc.AddClient(pcc)
 
-	pcc = NewPubControlClient("uri")
-	pcc.publish = publish2
-	pc.AddClient(pcc)
-
 	pcc = NewPubControlClient("error")
 	pcc.publish = publishError
+	pc.AddClient(pcc)
+
+	pcc = NewPubControlClient("uri")
+	pcc.publish = publish2
 	pc.AddClient(pcc)
 
 	err := pc.Publish("chan", item)
