@@ -101,7 +101,7 @@ func (pc *PubControl) Publish(channel string, item *Item) error {
 
 			err := client.Publish(channel, item)
 			if err != nil {
-				errCh <- fmt.Sprintf("%s: %s", client.uri, err.Error())
+				errCh <- fmt.Sprintf("%s: %s", client.uri, strings.TrimSpace(err.Error()))
 			}
 		}()
 	}
