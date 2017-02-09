@@ -1,12 +1,12 @@
 {
 	"ImportPath": "github.com/fanout/go-pubcontrol",
 	"GoVersion": "go1.4",
-	"GodepVersion": "v74",
+	"GodepVersion": "v75",
 	"Deps": [
 		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
-			"Comment": "v3.0.0-8-g24c63f5",
-			"Rev": "24c63f56522a87ec5339cc3567883f1039378fdb"
+			"Comment": "v3.0.0-12-ga601269",
+			"Rev": "a601269ab70c205d26370c16f7c81e9017c14e04"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
