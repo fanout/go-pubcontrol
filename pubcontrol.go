@@ -97,7 +97,6 @@ func (pc *PubControl) Publish(channel string, item *Item) error {
 					errCh <- fmt.Sprintf("%s: PANIC: %v\n%s", client.uri, err, stack)
 				}
 				wg.Done()
-
 			}()
 
 			err := client.Publish(channel, item)
