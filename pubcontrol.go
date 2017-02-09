@@ -8,9 +8,10 @@
 package pubcontrol
 
 import (
-	"sync"
-	"strings"
 	"fmt"
+	"runtime"
+	"strings"
+	"sync"
 )
 
 // The PubControl struct allows a consumer to manage a set of publishing
@@ -76,17 +77,42 @@ func (pc *PubControl) ApplyConfig(config []map[string]interface{}) {
 }
 
 // The publish method for publishing the specified item to the specified
-// channel on the configured endpoints.
+// channel on the configured endpoints. Different endpoints are published to in parallel,
+// with this function waiting for them to finish. Any errors (including panics) are aggregated
+// into one error.
 func (pc *PubControl) Publish(channel string, item *Item) error {
 	pc.clientsRWLock.RLock()
 	defer pc.clientsRWLock.RUnlock()
-	errs := make([]string, 0)
+	wg := sync.WaitGroup{}
+	errCh := make(chan string, len(pc.clients))
+
 	for _, pcc := range pc.clients {
-		err := pcc.Publish(channel, item)
-		if err != nil {
-			errs = append(errs, err.Error())
-		}
+		wg.Add(1)
+		client := pcc
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stack := make([]byte, 1024*8)
+					stack = stack[:runtime.Stack(stack, false)]
+					errCh <- fmt.Sprintf("%s: PANIC: %v\n%s", client.uri, err, stack)
+				}
+				wg.Done()
+
+			}()
+
+			err := client.Publish(channel, item)
+			if err != nil {
+				errCh <- fmt.Sprintf("%s: %s", client.uri, err.Error())
+			}
+		}()
 	}
+	wg.Wait()
+	close(errCh)
+	errs := make([]string, 0)
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("%d/%d client(s) failed to publish to channel: %s Errors: [%s]",
 			len(errs), len(pc.clients), channel, strings.Join(errs, "],["))
