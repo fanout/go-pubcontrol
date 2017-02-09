@@ -7,7 +7,7 @@
 
 package pubcontrol
 
-import 
+import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -18,6 +18,7 @@ import
 	"strings"
 	"sync"
 	"time"
+	"net"
 )
 
 // An internal type used to define the Publish method.
