@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
