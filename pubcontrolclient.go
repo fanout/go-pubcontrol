@@ -45,7 +45,7 @@ type PubControlClient struct {
 	authBasicPass   string
 	authJwtClaim    map[string]interface{}
 	authJwtKey      []byte
-    authBearerKey   []byte
+	authBearerKey   []byte
 	publish         publisher
 	pubCall         pubCaller
 	makeHttpRequest makeHttpRequester
@@ -99,9 +99,9 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
 }
 
 func (pcc *PubControlClient) SetAuthBearer(key []byte) {
-    pcc.lock.Lock()
-    pcc.authBearerKey = key
-    pcc.lock.Unlock()
+	pcc.lock.Lock()
+	pcc.authBearerKey = key
+	pcc.lock.Unlock()
 }
 
 // An internal method used to generate an authorization header. The
@@ -129,9 +129,9 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
 			return "", err
 		}
 		return strings.Join([]string{"Bearer ", tokenString}, ""), nil
-    } else if pcc.authBearerKey != nil {
-        authString := string(pcc.authBearerKey)
-        return strings.Join([]string{"Bearer ", authString}, ""), nil
+	} else if pcc.authBearerKey != nil {
+		authString := string(pcc.authBearerKey)
+		return strings.Join([]string{"Bearer ", authString}, ""), nil
 	} else {
 		return "", nil
 	}
