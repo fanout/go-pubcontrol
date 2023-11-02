@@ -71,9 +71,7 @@ func (pc *PubControl) ApplyConfig(config []map[string]interface{}) {
 			case []byte:
 				pcc.SetAuthJwt(claim, entry["key"].([]byte))
 			}
-			continue
-		}
-		if _, ok := entry["key"]; ok {
+		} else if _, ok := entry["key"]; ok {
 			switch entry["key"].(type) {
 			case string:
 				pcc.SetAuthBearer([]byte(entry["key"].(string)))
