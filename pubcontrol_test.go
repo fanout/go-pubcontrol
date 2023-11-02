@@ -10,8 +10,8 @@ package pubcontrol
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestPcInitialize(t *testing.T) {
