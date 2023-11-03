@@ -62,7 +62,7 @@ func TestPccGenerateAuthHeaderJwt(t *testing.T) {
 
 func TestPccGenerateAuthHeaderBearer(t *testing.T) {
 	pcc := NewPubControlClient("uri")
-	pcc.SetAuthBearer([]byte("token"))
+	pcc.SetAuthBearer("token")
 	authHeader, err := pcc.generateAuthHeader()
 	assert.Nil(t, err)
 	assert.Equal(t, authHeader, "Bearer token")
