@@ -45,6 +45,7 @@ type PubControlClient struct {
 	authBasicPass   string
 	authJwtClaim    map[string]interface{}
 	authJwtKey      []byte
+	authBearerKey   string
 	publish         publisher
 	pubCall         pubCaller
 	makeHttpRequest makeHttpRequester
@@ -97,6 +98,12 @@ func (pcc *PubControlClient) SetAuthJwt(claim map[string]interface{},
 	pcc.lock.Unlock()
 }
 
+func (pcc *PubControlClient) SetAuthBearer(key string) {
+	pcc.lock.Lock()
+	pcc.authBearerKey = key
+	pcc.lock.Unlock()
+}
+
 // An internal method used to generate an authorization header. The
 // authorization header is generated based on whether basic or JWT
 // authorization information was provided via the publicly accessible
@@ -122,6 +129,8 @@ func (pcc *PubControlClient) generateAuthHeader() (string, error) {
 			return "", err
 		}
 		return strings.Join([]string{"Bearer ", tokenString}, ""), nil
+	} else if pcc.authBearerKey != "" {
+		return strings.Join([]string{"Bearer ", pcc.authBearerKey}, ""), nil
 	} else {
 		return "", nil
 	}

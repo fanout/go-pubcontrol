@@ -72,6 +72,7 @@ func main() {
 
     // Explicitly add an endpoint as a PubControlClient instance:
     client := pubcontrol.NewPubControlClient("<myendpoint_uri>")
+    // Optionally set bearer auth: client.SetAuthBearer("<token>")
     // Optionally set JWT auth: client.SetAuthJwt(<claim>, "<key>")
     // Optionally set basic auth: client.SetAuthBasic("<user>", "<password>")
     pub.AddClient(client)
