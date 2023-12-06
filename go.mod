@@ -1,4 +1,4 @@
-module fanout/go-pubcontrol
+module github.com/fanout/go-pubcontrol
 
 go 1.20
 
