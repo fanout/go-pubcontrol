@@ -3,7 +3,7 @@ module github.com/fanout/go-pubcontrol
 go 1.20
 
 require (
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/stretchr/testify v1.8.4
 )
 
